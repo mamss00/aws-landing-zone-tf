@@ -2,11 +2,53 @@
 
 Infrastructure code repository demonstrating AWS multi-account setup using Terraform and GitHub Actions.
 
-This project templates an enterprise AWS landing zone including:
-- Multi-account management (Control Tower & Organizations)
-- Security baseline (GuardDuty, Security Hub)
-- Centralized logging
-- Network connectivity
-- Identity management (SSO)
+## Architecture Components
 
-Note: Learning/Portfolio project - Can be developed without deployment to avoid AWS costs.
+### Account Factory & Organizations
+- Organization Management Account
+- Account Baseline Pipelines
+- Account Lifecycle Management
+- OU Structure:
+ - Core OU
+ - Workload OU
+ - Prod OU 
+ - Dev OU
+ - Sandbox OU
+
+### Workload Accounts
+- Production Workload Account
+- Development Workload Account
+- Testing/Sandbox Account
+
+### Core Infrastructure
+- Log Archive Account
+ - CloudTrail Archives
+ - VPC Flow Logs
+ - AWS Config Archives
+ - GuardDuty Archives
+ - KMS Encryption
+
+- Security Account
+ - AWS Security Hub
+ - Amazon GuardDuty
+ - AWS Config
+ - IAM Access Analyzer
+ - Amazon Inspector
+ - Security Findings
+
+- Connectivity Account
+ - Route53 Hosted Zones
+ - DNS Resolver Endpoints
+ - Transit Gateway
+ - VPN Connection
+ - Direct Connect
+ - Network Firewall
+ - Centralized VPCs
+
+### Identity & Access Management
+- IAM Identity Center (SSO)
+- Permission Sets
+- Users & Groups
+- Access Controls
+
+Note: Learning/Portfolio project.
