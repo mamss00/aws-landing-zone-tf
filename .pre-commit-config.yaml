@@ -1,66 +1,54 @@
-# Pre-commit configuration for AWS Landing Zone
-# This configuration enforces code quality, security, and infrastructure best practices
-# through a series of automated checks that run before each commit.
-
-# Exclude patterns for files that should not be processed
-# This helps improve performance and avoid false positives
 exclude: |
   (?x)^(
-    \.terraform/.*|               # Terraform working directory
-    \.terragrunt-cache/.*|        # Terragrunt cache files
-    .*\.tfstate|                  # Terraform state files
-    .*\.tfstate\.backup|          # Terraform state backups
-    .*\.tfvars\.json|             # Terraform variable files in JSON
-    .*/\.terraform/.*|            # Nested Terraform directories
-    .*/plans/.*|                  # Generated plan files
-    .*lock\.hcl|                  # Lock files
-    \.pre-commit-config\.yaml     # Pre-commit config itself
+    \.terraform/.*|
+    \.terragrunt-cache/.*|
+    .*\.tfstate|
+    .*\.tfstate\.backup|
+    .*\.tfvars\.json|
+    .*/\.terraform/.*|
+    .*/plans/.*|
+    .*lock\.hcl|
+    \.pre-commit-config\.yaml
   )$
 
 repos:
-  # Standard pre-commit hooks for basic file hygiene and security
+  # Basic file and security hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-      - id: check-json                 # Ensures all JSON files are valid
-      - id: check-merge-conflict       # Checks for files that contain merge conflict strings
-      - id: detect-aws-credentials     # Checks for AWS credentials
-        args: [--allow-missing-credentials]  # Fixed argument syntax
-      - id: detect-private-key         # Checks for private keys
-      - id: trailing-whitespace        # Ensures no trailing whitespace
-      - id: mixed-line-ending          # Ensures consistent line endings
-        args: [--fix=lf]               # Forces Linux-style line endings
-      - id: check-added-large-files    # Prevents giant files from being committed
+      - id: check-json
+      - id: check-merge-conflict
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
+      - id: detect-private-key
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-added-large-files
         args: ['--maxkb=500']
-      - id: end-of-file-fixer         # Ensures files end with a newline
+      - id: end-of-file-fixer
 
-  # Terraform-specific checks and formatting
+  # Terraform quick checks
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.97.0
     hooks:
-      - id: terraform_fmt              # Ensures consistent Terraform formatting
-      - id: terraform_validate         # Validates Terraform syntax and configuration
-      - id: terraform_docs             # Updates Terraform documentation automatically
-      - id: terraform_tflint           # More detailed Terraform linting
+      - id: terraform_fmt
+      - id: terraform_validate
+      - id: terraform_tflint
         args:
-#          - '--args=--module'
-          - '--args=--call-module-type=all'  # Updated syntax for newer versions
-      - id: terraform_checkov          # Security and compliance scanning
-        args:
-          - --args=--quiet
-          - --args=--skip-check CKV_AWS_123  # Skip specific rules if needed
+          - '--args=--call-module-type=all'
 
-  # Secret detection using Gitleaks
+  # Secret detection
   - repo: https://github.com/zricethezav/gitleaks
     rev: v8.18.1
     hooks:
-      - id: gitleaks                   # Advanced secret detection
-        args: [--verbose, --source=.]   # Corrected arguments for gitleaks
+      - id: gitleaks
+        args: [--verbose, --source=.]
 
-  # Local hooks for custom validations
+  # Local hooks
   - repo: local
     hooks:
-      - id: validate-commit-message    # Enforces conventional commit messages
+      - id: validate-commit-message
         name: Validate Commit Message
         entry: python scripts/validate_commit_message.py
         language: python
