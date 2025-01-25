@@ -43,7 +43,7 @@ repos:
       - id: terraform_docs             # Updates Terraform documentation automatically
       - id: terraform_tflint           # More detailed Terraform linting
         args:
-          - '--args=--module'
+#          - '--args=--module'
           - '--args=--call-module-type=all'  # Updated syntax for newer versions
       - id: terraform_checkov          # Security and compliance scanning
         args:
