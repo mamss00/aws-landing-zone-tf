@@ -1,0 +1,131 @@
+name: 'Terraform Enterprise Pipeline'
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '.github/workflows/**'
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '.github/workflows/**'
+
+# Définition des permissions globales pour plus de sécurité
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  # Validation de la qualité du code
+  code-quality:
+    name: 'Code Quality'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Important pour l'historique Git complet
+
+      - name: Detect Terraform version
+        id: tfversion
+        run: |
+          TFVERSION=$(grep -A1 'required_version' versions.tf | tail -1 | cut -d'"' -f2)
+          echo "tfversion=$TFVERSION" >> $GITHUB_OUTPUT
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ steps.tfversion.outputs.tfversion }}
+          terraform_wrapper: false
+
+      # Cache pour améliorer les performances
+      - name: Cache Terraform plugins
+        uses: actions/cache@v3
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: TFLint Setup
+        uses: terraform-linters/setup-tflint@v3
+
+      - name: Initialize TFLint
+        run: tflint --init
+        env:
+          TFLINT_LOG: debug
+
+  # Analyse de sécurité approfondie
+  security-analysis:
+    needs: code-quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run KICS Scan
+        uses: checkmarx/kics-github-action@v1.7
+        with:
+          path: '.'
+          output_path: kics-results
+          platform: terraform
+          fail_on: high
+
+      - name: Run Snyk Infrastructure as Code
+        uses: snyk/actions/iac@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      # SARIF pour une meilleure visualisation des résultats de sécurité
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: results.sarif
+
+  # Tests et validation
+  test:
+    needs: security-analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Unit Tests
+        run: |
+          for test in $(find . -name "*_test.tf"); do
+            terraform test -junit-xml=test-results.xml "$test"
+          done
+
+      - name: Run Conftest Policy Tests
+        uses: instrumenta/conftest-action@master
+        with:
+          files: .
+          policy: policy/
+
+  # Analyse des coûts et de la conformité
+  cost-compliance:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run OPA Compliance Check
+        uses: docker://openpolicyagent/opa:latest
+        with:
+          args: eval --input terraform.json --data policy/ --format pretty
+
+      # Ajout de la politique de gouvernance
+      - name: Check Tagging Compliance
+        run: |
+          python3 scripts/check_tags.py
+
+  # Notification et documentation
+  notify:
+    needs: [code-quality, security-analysis, test, cost-compliance]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

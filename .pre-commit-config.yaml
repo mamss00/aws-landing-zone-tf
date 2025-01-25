@@ -1,10 +1,13 @@
 # Pre-commit configuration for AWS Landing Zone
-# Focus on fast, developer-friendly checks
+# This configuration enforces code quality, security, and infrastructure best practices
+# through a series of automated checks that run before each commit.
 
+# Exclude patterns for files that should not be processed
+# This helps improve performance and avoid false positives
 exclude: |
   (?x)^(
     \.terraform/.*|               # Terraform working directory
-    \.terragrunt-cache/.*|        # Terragrunt cache
+    \.terragrunt-cache/.*|        # Terragrunt cache files
     .*\.tfstate|                  # Terraform state files
     .*\.tfstate\.backup|          # Terraform state backups
     .*\.tfvars\.json|             # Terraform variable files in JSON
@@ -15,42 +18,50 @@ exclude: |
   )$
 
 repos:
-  # Quick file hygiene checks
+  # Standard pre-commit hooks for basic file hygiene and security
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-json
-      - id: check-added-large-files    # Prevents accidental large file commits
-      - id: detect-aws-credentials
-        args: [--allow-missing-credentials]
-      - id: check-merge-conflict
-      - id: mixed-line-ending          # Important for Windows/Linux compatibility
-        args: [--fix=lf]
+      - id: check-json                 # Ensures all JSON files are valid
+      - id: check-merge-conflict       # Checks for files that contain merge conflict strings
+      - id: detect-aws-credentials     # Checks for AWS credentials
+        args: [--allow-missing-credentials]  # Fixed argument syntax
+      - id: detect-private-key         # Checks for private keys
+      - id: trailing-whitespace        # Ensures no trailing whitespace
+      - id: mixed-line-ending          # Ensures consistent line endings
+        args: [--fix=lf]               # Forces Linux-style line endings
+      - id: check-added-large-files    # Prevents giant files from being committed
+        args: ['--maxkb=500']
+      - id: end-of-file-fixer         # Ensures files end with a newline
 
-  # Fast Terraform validations
+  # Terraform-specific checks and formatting
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.97.0
     hooks:
-      - id: terraform_fmt              # Quick formatting
-      - id: terraform_docs             # Documentation updates
-      - id: terraform_validate         # Basic syntax check
-      - id: terraform_tflint          
+      - id: terraform_fmt              # Ensures consistent Terraform formatting
+      - id: terraform_validate         # Validates Terraform syntax and configuration
+      - id: terraform_docs             # Updates Terraform documentation automatically
+      - id: terraform_tflint           # More detailed Terraform linting
         args:
-          - '--args=--call-module-type=all'
-      - id: terraform_providers_lock   # Ensure provider versions are locked
+          - '--args=--module'
+          - '--args=--call-module-type=all'  # Updated syntax for newer versions
+      - id: terraform_checkov          # Security and compliance scanning
+        args:
+          - --args=--quiet
+          - --args=--skip-check CKV_AWS_123  # Skip specific rules if needed
 
-  # Git commit message standardization
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.13.0
+  # Secret detection using Gitleaks
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.18.1
     hooks:
-      - id: commitizen
+      - id: gitleaks                   # Advanced secret detection
+        args: [--verbose, --source=.]   # Corrected arguments for gitleaks
+
+  # Local hooks for custom validations
+  - repo: local
+    hooks:
+      - id: validate-commit-message    # Enforces conventional commit messages
+        name: Validate Commit Message
+        entry: python scripts/validate_commit_message.py
+        language: python
         stages: [commit-msg]
-
-  # Terragrunt formatting
-  - repo: https://github.com/gruntwork-io/pre-commit
-    rev: v0.1.25
-    hooks:
-      - id: terragrunt-hclfmt

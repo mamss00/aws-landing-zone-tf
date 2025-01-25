@@ -1,3 +1,0 @@
-# TFSec security scanning configuration
-minimum-severity: HIGH
-exclude-downloaded-modules: true
