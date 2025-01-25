@@ -1,20 +1,56 @@
-repos:
-  - repo: https://github.com/bridgecrewio/checkov.git
-    rev: '3.2.34'
-    hooks:
-      - id: checkov
-        args: [--quiet]
+# Pre-commit configuration for AWS Landing Zone
+# Focus on fast, developer-friendly checks
 
+exclude: |
+  (?x)^(
+    \.terraform/.*|               # Terraform working directory
+    \.terragrunt-cache/.*|        # Terragrunt cache
+    .*\.tfstate|                  # Terraform state files
+    .*\.tfstate\.backup|          # Terraform state backups
+    .*\.tfvars\.json|             # Terraform variable files in JSON
+    .*/\.terraform/.*|            # Nested Terraform directories
+    .*/plans/.*|                  # Generated plan files
+    .*lock\.hcl|                  # Lock files
+    \.pre-commit-config\.yaml     # Pre-commit config itself
+  )$
+
+repos:
+  # Quick file hygiene checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files    # Prevents accidental large file commits
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
+      - id: check-merge-conflict
+      - id: mixed-line-ending          # Important for Windows/Linux compatibility
+        args: [--fix=lf]
 
+  # Fast Terraform validations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.88.0
+    rev: v1.97.0
     hooks:
-      - id: terraform_fmt
-      - id: terraform_docs
-      - id: terraform_tflint
+      - id: terraform_fmt              # Quick formatting
+      - id: terraform_docs             # Documentation updates
+      - id: terraform_validate         # Basic syntax check
+      - id: terraform_tflint          
+        args:
+          - '--args=--call-module-type=all'
+      - id: terraform_providers_lock   # Ensure provider versions are locked
+
+  # Git commit message standardization
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.13.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+  # Terragrunt formatting
+  - repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.25
+    hooks:
+      - id: terragrunt-hclfmt

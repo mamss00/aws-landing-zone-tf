@@ -24,5 +24,3 @@ resource "aws_organizations_organizational_unit" "ous" {
     Purpose   = "Organization Management"
   }
 }
-
-#Test Pre-commit

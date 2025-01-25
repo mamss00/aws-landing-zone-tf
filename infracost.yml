@@ -1,0 +1,27 @@
+version: 0.1
+currency: EUR
+projects:
+  # Core infrastructure costs
+  - path: deployments/1-core
+    terraform_var_files:
+      - "*.tfvars"  # This will catch all tfvars files in the directory
+
+  # Security infrastructure costs
+  - path: deployments/2-security
+    terraform_var_files:
+      - "*.tfvars"
+
+  # Logging infrastructure costs
+  - path: deployments/3-logging
+    terraform_var_files:
+      - "*.tfvars"
+
+  # Network infrastructure costs
+  - path: deployments/4-network
+    terraform_var_files:
+      - "*.tfvars"
+
+  # Identity infrastructure costs
+  - path: deployments/5-identity
+    terraform_var_files:
+      - "*.tfvars"

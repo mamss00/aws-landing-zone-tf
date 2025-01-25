@@ -1,0 +1,10 @@
+# Configuration for terraform-docs
+formatter: markdown table
+header-from: main.tf
+footer-from: ""
+recursive:
+  enabled: true
+  path: modules
+sort:
+  enabled: true
+  by: required
