@@ -1,29 +1,41 @@
-# Terraform files and directories that should never be committed
+# Terraform Working Directories
+**/.terraform/*
 .terraform/
+.terraform.lock.hcl
+
+# Terraform State Files
 *.tfstate
 *.tfstate.*
-.terragrunt-cache/
-terraform.tfvars
+*.tfplan
+
+# Terraform Variables (might contain sensitive data)
+*.tfvars
 *.tfvars.json
+
+# Terragrunt Cache
+.terragrunt-cache/
+
+# Crash Log Files
+crash.log
+crash.*.log
+
+# Override Files
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+
+# Provider Files
 .terraformrc
 terraform.rc
 
-# General system files to ignore
-.DS_Store
+# Local Development Files
+.env
+.envrc
+
+# IDE and Editor Files
+.idea/
+.vscode/
 *.swp
 *.swo
 *~
-
-# IDE and editor files
-.idea/
-.vscode/
-*.sublime-workspace
-*.sublime-project
-
-# Local development files
-.env
-.envrc
